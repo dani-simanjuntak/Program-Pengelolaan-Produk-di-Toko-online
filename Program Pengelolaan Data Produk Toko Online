@@ -1,0 +1,214 @@
+program projekt;
+
+uses crt;
+
+const
+    MAX_PRODUK = 100;
+
+type
+    TProduk = record
+        id: Integer;
+        nama: string[50];
+        harga: Real;
+        stok: Integer;
+    end;
+
+var
+    produk: array[1..MAX_PRODUK] of TProduk;
+    jumlahProduk: Integer;
+
+procedure TambahProduk;
+var
+    p: TProduk;
+begin
+    if jumlahProduk >= MAX_PRODUK then
+    begin
+        writeln('Jumlah produk sudah mencapai batas maksimum.');
+        exit;
+    end;
+
+    writeln('Masukkan ID Produk:');
+    readln(p.id);
+    writeln('Masukkan Nama Produk:');
+    readln(p.nama);
+    writeln('Masukkan Harga Produk:');
+    readln(p.harga);
+    writeln('Masukkan Stok Produk:');
+    readln(p.stok);
+
+    Inc(jumlahProduk);
+    produk[jumlahProduk] := p;
+
+    writeln('Produk berhasil ditambahkan.');
+end;
+
+procedure TampilkanProduk;
+var
+    i: Integer;
+begin
+    if jumlahProduk = 0 then
+    begin
+        writeln('Tidak ada produk untuk ditampilkan.');
+        exit;
+    end;
+
+    writeln('Daftar Produk:');
+    writeln('============================================================================');
+    writeln('|       ID       |            Nama           |      Harga      |    Stok    |');
+    writeln('============================================================================');
+    for i := 1 to jumlahProduk do
+    begin
+        with produk[i] do
+        begin
+            writeln('|', id:15, ' | ', nama:25, ' | ', harga:15:2, ' | ', stok:10, ' |');
+        end;
+    end;
+    writeln('============================================================================');
+end;
+
+procedure HapusProduk;
+var
+    idHapus, i, j: Integer;
+    ditemukan: Boolean;
+begin
+    if jumlahProduk = 0 then
+    begin
+        writeln('Tidak ada produk untuk dihapus.');
+        exit;
+    end;
+
+    writeln('Masukkan ID Produk yang ingin dihapus:');
+    readln(idHapus);
+    ditemukan := False;
+
+    for i := 1 to jumlahProduk do
+    begin
+        if produk[i].id = idHapus then
+        begin
+            ditemukan := True;
+            for j := i to jumlahProduk - 1 do
+            begin
+                produk[j] := produk[j + 1];
+            end;
+            Dec(jumlahProduk);
+            writeln('Produk dengan ID ', idHapus, ' berhasil dihapus.');
+            Break;
+        end;
+    end;
+
+    if not ditemukan then
+        writeln('Produk dengan ID ', idHapus, ' tidak ditemukan.');
+end;
+
+function CariProdukByID(id: Integer): Integer;
+var
+    i: Integer;
+begin
+    for i := 1 to jumlahProduk do
+    begin
+        if produk[i].id = id then
+        begin
+            CariProdukByID := i; 
+            exit;
+        end;
+    end;
+    CariProdukByID := -1; 
+end;
+
+function CariProdukRekursif(id: Integer; idx: Integer): Integer;
+begin
+    if idx > jumlahProduk then
+        CariProdukRekursif := -1 
+    else if produk[idx].id = id then
+        CariProdukRekursif := idx 
+    else
+        CariProdukRekursif := CariProdukRekursif(id, idx + 1); 
+end;
+
+procedure SimpanKeFile;
+var
+    f: Text;
+    i: Integer;
+begin
+    Assign(f, 'data_produk.txt');
+    Rewrite(f);
+    for i := 1 to jumlahProduk do
+    begin
+        with produk[i] do
+            writeln(f, id, ' ', nama, ' ', harga:0:2, ' ', stok);
+    end;
+    Close(f);
+    writeln('Data produk berhasil disimpan ke file.');
+end;
+
+procedure MuatDariFile;
+var
+    f: Text;
+    p: TProduk;
+begin
+    Assign(f, 'data_produk.txt');
+    Reset(f);
+    jumlahProduk := 0;
+    while not EOF(f) do
+    begin
+        readln(f, p.id, p.nama, p.harga, p.stok);
+        Inc(jumlahProduk);
+        produk[jumlahProduk] := p;
+    end;
+    Close(f);
+    writeln('Data produk berhasil dimuat dari file.');
+end;
+
+var
+    pilihan, idCari, indeks: Integer;
+
+begin
+     TextBackground(white);
+    jumlahProduk := 0;
+    repeat
+        clrscr;
+        writeln('Pengelolaan Data Produk Toko Online');
+        writeln('1. Tambah Produk');
+        writeln('2. Tampilkan Produk');
+        writeln('3. Hapus Produk');
+        writeln('4. Cari Produk (Iteratif)');
+        writeln('5. Cari Produk (Rekursif)');
+        writeln('6. Simpan Data ke File');
+        writeln('7. Muat Data dari File');
+        writeln('8. Keluar');
+        write('Pilih menu (1-8): ');
+        readln(pilihan);
+
+        case pilihan of
+            1: TambahProduk;
+            2: TampilkanProduk;
+            3: HapusProduk;
+            4: begin
+                writeln('Masukkan ID Produk yang ingin dicari:');
+                readln(idCari);
+                indeks := CariProdukByID(idCari);
+                if indeks = -1 then
+                    writeln('Produk tidak ditemukan.')
+                else
+                    writeln('Produk ditemukan pada indeks ', indeks);
+               end;
+            5: begin
+                writeln('Masukkan ID Produk yang ingin dicari:');
+                readln(idCari);
+                indeks := CariProdukRekursif(idCari, 1);
+                if indeks = -1 then
+                    writeln('Produk tidak ditemukan.')
+                else
+                    writeln('Produk ditemukan pada indeks ', indeks);
+               end;
+            6: SimpanKeFile;
+            7: MuatDariFile;
+            8: writeln('Terima kasih! Keluar dari program.');
+        else
+            writeln('Pilihan tidak valid. Silakan coba lagi.');
+        end;
+
+        writeln('Tekan Enter untuk melanjutkan...');
+        readln;
+    until pilihan = 8;
+end.
